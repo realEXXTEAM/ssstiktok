@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSS TikTok Downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #7F00FF, #E100FF);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+            width: 350px;
+        }
+        .input-box {
+            display: flex;
+            align-items: center;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+        }
+        .input-box input {
+            border: none;
+            background: transparent;
+            flex: 1;
+            font-size: 16px;
+            padding: 5px;
+            outline: none;
+        }
+        .input-box button {
+            background: #6200ea;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-download {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            background: linear-gradient(135deg, #7F00FF, #E100FF);
+            color: white;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-refresh {
+            display: none;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            background: #ff4757;
+            color: white;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #111;
+            color: white;
+            border-radius: 10px;
+            width: 310px;
+            display: none;
+            align-items: center;
+        }
+        .profile-pic {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .user-info {
+            flex: 1;
+            text-align: left;
+        }
+        .username {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .description {
+            font-size: 14px;
+            color: #ddd;
+        }
+        .video-container {
+            width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+        .download-options button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background: #00A2FF;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Download video TikTok</h2>
+        <div class="input-box" id="inputBox">
+            <input type="text" id="videoUrl" placeholder="Tempel tautan video di sini">
+            <button onclick="pasteUrl()">Tempel</button>
+        </div>
+        <button class="btn-download" id="downloadBtn" onclick="fetchVideo()">Download</button>
+        <button class="btn-refresh" id="refreshBtn" onclick="resetUI()">🔄 Refresh</button>
+        
+        <div id="loading" class="hidden">⏳ Loading...</div>
+        
+        <div id="result" class="result">
+            <img id="profilePic" class="profile-pic" src="" alt="Profile">
+            <div class="user-info">
+                <div id="username" class="username"></div>
+                <div id="description" class="description"></div>
+            </div>
+        </div>
+
+        <div class="video-container" id="videoContainer">
+            <video id="videoPreview" controls width="100%"></video>
+            <div class="download-options">
+                <button id="downloadVideo">Download Video</button>
+                <button id="downloadAudio">Download Audio</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function pasteUrl() {
+            navigator.clipboard.readText().then(text => {
+                document.getElementById("videoUrl").value = text;
+            });
+        }
+
+        async function fetchVideo() {
+            const url = document.getElementById("videoUrl").value;
+            if (!url) {
+                alert("Masukkan tautan video terlebih dahulu!");
+                return;
+            }
+            
+            document.getElementById("loading").classList.remove("hidden");
+            document.getElementById("result").style.display = "none";
+            document.getElementById("videoContainer").style.display = "none";
+            document.getElementById("inputBox").classList.add("hidden");
+            document.getElementById("downloadBtn").classList.add("hidden");
+
+            try {
+                const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`;
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (!data || !data.data) {
+                    throw new Error("Gagal mengambil data video.");
+                }
+
+                const videoData = data.data;
+                document.getElementById("profilePic").src = videoData.author.avatar;
+                document.getElementById("username").innerText = videoData.author.nickname;
+                document.getElementById("description").innerText = videoData.title;
+                document.getElementById("videoPreview").src = videoData.play;
+                document.getElementById("downloadVideo").onclick = () => window.open(videoData.play, "_blank");
+                document.getElementById("downloadAudio").onclick = () => window.open(videoData.music, "_blank");
+
+                document.getElementById("loading").classList.add("hidden");
+                document.getElementById("result").style.display = "flex";
+                document.getElementById("videoContainer").style.display = "block";
+                document.getElementById("refreshBtn").style.display = "block";
+
+            } catch (error) {
+                alert("Terjadi kesalahan: " + error.message);
+                document.getElementById("loading").classList.add("hidden");
+            }
+        }
+
+        function resetUI() {
+            document.getElementById("videoUrl").value = "";
+            document.getElementById("inputBox").classList.remove("hidden");
+            document.getElementById("downloadBtn").classList.remove("hidden");
+            document.getElementById("result").style.display = "none";
+            document.getElementById("videoContainer").style.display = "none";
+            document.getElementById("refreshBtn").style.display = "none";
+        }
+    </script>
+</body>
+</html>
+
+<!SupportCenter>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tombol Email</title>
+    <style>
+        .email-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .email-button:hover {
+            background-color: #0056b3;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            width: 300px;
+            z-index: 1000;
+        }
+        .modal.active {
+            display: block;
+        }
+        .modal textarea {
+            width: 100%;
+            height: 100px;
+            margin-top: 10px;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .modal-overlay.active {
+            display: block;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .error-message {
+            color: red;
+            font-size: 12px;
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <button class="email-button" onclick="openModal()">📩</button>
+    
+    <div id="modalOverlay" class="modal-overlay"></div>
+    
+    <div id="emailModal" class="modal">
+        <button class="close-btn" onclick="closeModal()">X</button>
+        <h3>Pilih Masalah</h3>
+        <select id="issueType">
+            <option value="Pertanyaan Umum">Pertanyaan Umum</option>
+            <option value="Masalah Teknis">Masalah Teknis</option>
+            <option value="Permintaan Layanan">Permintaan Layanan</option>
+        </select>
+        <textarea id="issueDescription" placeholder="Deskripsikan masalah Anda..." maxlength="200"></textarea>
+        <p id="errorMessage" class="error-message"></p>
+        <button onclick="sendEmail()">Kirim</button>
+    </div>
+    
+    <script>
+        function openModal() {
+            document.getElementById("emailModal").classList.add("active");
+            document.getElementById("modalOverlay").classList.add("active");
+        }
+        
+        function closeModal() {
+            document.getElementById("emailModal").classList.remove("active");
+            document.getElementById("modalOverlay").classList.remove("active");
+            document.getElementById("errorMessage").style.display = "none";
+        }
+        
+        function sendEmail() {
+            var email = "s27201911@gmail.com";
+            var subject = encodeURIComponent("Permintaan Informasi: " + document.getElementById("issueType").value);
+            var description = document.getElementById("issueDescription").value.trim();
+            var errorMessage = document.getElementById("errorMessage");
+            
+            if (description.length < 1) {
+                errorMessage.textContent = "Anda harus mengisi deskripsi ini";
+                errorMessage.style.display = "block";
+                if (navigator.vibrate) {
+                    navigator.vibrate(200);
+                }
+                return;
+            } else if (description.length > 200) {
+                errorMessage.textContent = "Teks terlalu panjang, maksimal 200 karakter";
+                errorMessage.style.display = "block";
+                if (navigator.vibrate) {
+                    navigator.vibrate(200);
+                }
+                return;
+            }
+            
+            var body = encodeURIComponent("Halo,\n\nSaya ingin menanyakan tentang " + document.getElementById("issueType").value + ". Berikut deskripsi saya:\n\n" + description + "\n\nTerima kasih.");
+            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+        }
+    </script>
+</body>
+</html>
+
+
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media UI</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #4A148C;
+        }
+        .social-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .social-button:hover {
+            background-color: #0056b3;
+        }
+        .social-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+            z-index: 1000;
+        }
+        .social-modal.active {
+            display: block;
+        }
+        .social-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .social-modal-overlay.active {
+            display: block;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .social-icons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .social-icons a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 200px;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: left;
+            text-decoration: none;
+            color: white;
+        }
+        .social-icons img {
+            width: 30px;
+            height: 30px;
+        }
+        .tiktok-btn { background-color: #000; }
+        .youtube-btn { background-color: #FF0000; }
+        .instagram-btn { background-color: #E1306C; }
+    </style>
+</head>
+<body>
+    <button class="social-button" onclick="openSocialModal()"></button>
+    
+    <div id="socialModalOverlay" class="social-modal-overlay"></div>
+    
+    <div id="socialModal" class="social-modal">
+        <button class="close-btn" onclick="closeSocialModal()">X</button>
+        <h3>Kunjungi Sosial Media</h3>
+        <div class="social-icons">
+            <a href="https://www.tiktok.com/@yenz99_?_t=ZS-8v4ufhXT0bN&_r=1" class="tiktok-btn" target="_blank">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a6/Tiktok_icon.svg" alt="TikTok">
+                TikTok
+            </a>
+            <a href="https://youtube.com/@sayengg?si=VkNFCbgFPZJ19x7s" class="youtube-btn" target="_blank">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png" alt="YouTube">
+                YouTube
+            </a>
+            <a href="https://www.instagram.com/sayenreal?igsh=YThuYW00dWRhemQ0" class="instagram-btn" target="_blank">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram">
+                Instagram
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        function openSocialModal() {
+            document.getElementById("socialModal").classList.add("active");
+            document.getElementById("socialModalOverlay").classList.add("active");
+        }
+        
+        function closeSocialModal() {
+            document.getElementById("socialModal").classList.remove("active");
+            document.getElementById("socialModalOverlay").classList.remove("active");
+        }
+    </script>
+</body>
+  </html>
